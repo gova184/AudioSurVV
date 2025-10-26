@@ -1,0 +1,5 @@
+{
+  "name": "AudioSurv",
+  "description": "A dynamic dashboard for security analysts to manage keywords and monitor real-time, AI-driven audio threat alerts. The system uses Gemini for deep contextual analysis of audio streams to identify threats and modern slang.",
+  "requestFramePermissions": []
+}
