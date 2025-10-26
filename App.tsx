@@ -3,10 +3,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Keyword, Alert, ThreatRating } from './types';
 import { performInitialScan, performDeepAnalysis } from './services/geminiService';
 import Header from './components/Header';
-import KeywordManager from './components/KeywordManager';
-import Dashboard from './components/Dashboard';
 import AudioScanner from './components/AudioScanner';
 import { fileToDataUrl } from './utils/fileUtils';
+import Sidebar from './components/Sidebar';
+import AlertCard from './components/AlertCard';
 
 const initialAlerts: Alert[] = [
     {
@@ -26,6 +26,10 @@ const initialAlerts: Alert[] = [
         semanticSummary: 'Unusual conversation regarding a "package" delivery at a non-standard location and time. Context suggests potential illicit activity.',
         fullTranscript: 'Did you get the package? Make sure no one sees you. The drop is behind the old warehouse at midnight.',
         analysisState: 'complete',
+        slangDetected: [
+            { term: 'package', meaning: 'Illicit item or contraband' },
+            { term: 'the drop', meaning: 'The location for a secret exchange' }
+        ],
     },
      {
         id: 'alert-4',
@@ -70,23 +74,11 @@ const App: React.FC = () => {
     });
     const [error, setError] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // New state for sorting and filtering
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'threat'>('newest');
     const [filterKeyword, setFilterKeyword] = useState<string>('');
-
-    // Persist keywords to localStorage without audio data
-    useEffect(() => {
-        try {
-             const keywordsToStore = keywords.map(keyword => ({
-                ...keyword,
-                samples: keyword.samples.map(({ audioSrc, ...restSample }) => restSample) 
-            }));
-            localStorage.setItem('audioSurvKeywords', JSON.stringify(keywordsToStore));
-        } catch (error) {
-            console.error("Failed to save keywords to localStorage", error);
-        }
-    }, [keywords]);
 
     // Persist alerts to localStorage without audio data
     useEffect(() => {
@@ -99,11 +91,35 @@ const App: React.FC = () => {
     }, [alerts]);
 
     const addKeyword = (keyword: Keyword) => {
-        setKeywords(prev => [...prev, keyword]);
+        setKeywords(prev => {
+            const updatedKeywords = [...prev, keyword];
+            try {
+                const keywordsToStore = updatedKeywords.map(kw => ({
+                    ...kw,
+                    samples: kw.samples.map(({ audioSrc, ...restSample }) => restSample)
+                }));
+                localStorage.setItem('audioSurvKeywords', JSON.stringify(keywordsToStore));
+            } catch (error) {
+                console.error("Failed to save keywords to localStorage", error);
+            }
+            return updatedKeywords;
+        });
     };
 
     const deleteKeyword = (id: string) => {
-        setKeywords(prev => prev.filter(k => k.id !== id));
+        setKeywords(prev => {
+            const updatedKeywords = prev.filter(k => k.id !== id);
+            try {
+                const keywordsToStore = updatedKeywords.map(kw => ({
+                    ...kw,
+                    samples: kw.samples.map(({ audioSrc, ...restSample }) => restSample)
+                }));
+                localStorage.setItem('audioSurvKeywords', JSON.stringify(keywordsToStore));
+            } catch (error) {
+                console.error("Failed to save keywords to localStorage", error);
+            }
+            return updatedKeywords;
+        });
     };
     
     const deleteAlert = (id: string) => {
@@ -150,6 +166,7 @@ const App: React.FC = () => {
                         threatRating: deepAnalysis.threat_rating,
                         semanticSummary: deepAnalysis.semantic_summary,
                         englishTranslation: deepAnalysis.english_translation,
+                        slangDetected: deepAnalysis.slang_detected,
                         analysisState: 'complete'
                       } 
                     : alert
@@ -165,7 +182,7 @@ const App: React.FC = () => {
     };
 
 
-    // Apply sorting and filtering
+    // Apply sorting and filtering for the Threat Log in the sidebar
     const displayedAlerts = useMemo(() => {
         let processedAlerts = [...alerts];
 
@@ -202,24 +219,40 @@ const App: React.FC = () => {
         }
     }, [error]);
 
+    // Get the absolute most recent alert for the main dashboard view
+    const recentAlert = useMemo(() => {
+        const sorted = [...alerts].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        return sorted.length > 0 ? sorted[0] : null;
+    }, [alerts]);
+
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
-            <Header />
+            <Sidebar 
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                keywords={keywords}
+                onAddKeyword={addKeyword}
+                onDeleteKeyword={deleteKeyword}
+                alerts={displayedAlerts}
+                onDeleteAlert={deleteAlert}
+                sortOrder={sortOrder}
+                onSortOrderChange={setSortOrder}
+                filterKeyword={filterKeyword}
+                onFilterKeywordChange={setFilterKeyword}
+            />
+            <Header onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
             <main className="container mx-auto p-4 md:p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1 flex flex-col gap-8">
-                        <AudioScanner onScan={handleAudioScan} loading={isScanning} />
-                        <KeywordManager keywords={keywords} onAddKeyword={addKeyword} onDeleteKeyword={deleteKeyword} />
-                    </div>
-                    <div className="lg:col-span-2">
-                        <Dashboard 
-                            alerts={displayedAlerts} 
-                            onDeleteAlert={deleteAlert}
-                            sortOrder={sortOrder}
-                            onSortOrderChange={setSortOrder}
-                            filterKeyword={filterKeyword}
-                            onFilterKeywordChange={setFilterKeyword}
-                        />
+                <div className="max-w-4xl mx-auto flex flex-col gap-8">
+                    <AudioScanner onScan={handleAudioScan} loading={isScanning} />
+                     <div>
+                        <h2 className="text-2xl font-bold text-white mb-4">Most Recent Analysis</h2>
+                        {recentAlert ? (
+                             <AlertCard alert={recentAlert} onDelete={deleteAlert} />
+                        ) : (
+                            <div className="text-center py-10 px-4 bg-gray-800/50 rounded-lg">
+                                <p className="text-gray-400">Scan an audio file to see the analysis here.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
                 {error && (

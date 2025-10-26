@@ -93,8 +93,9 @@ export const performDeepAnalysis = async (transcript: string): Promise<DeepAnaly
     const systemInstruction = `You are an expert AI security analyst for "AudioSurv". You have been given an audio transcript. 
 Perform a deep contextual analysis. Your task is to: 
 1. Provide a final, highly accurate threat rating ('High', 'Medium', 'Low'). 
-2. Write a detailed semantic summary explaining the context, intent, tone, and any detected slang or code words.
-3. Translate the full transcript into English. If it is already in English, return the original transcript.
+2. Write a detailed semantic summary explaining the context, intent, and tone.
+3. Identify any slang, jargon, or code words in the transcript. For each one, provide the term and its translated meaning. If none are found, return an empty array.
+4. Translate the full transcript into English. If it is already in English, return the original transcript.
 Return ONLY a valid JSON object.`;
 
     const userPrompt = `Analyze the following transcript: "${transcript}"`;
@@ -122,6 +123,24 @@ Return ONLY a valid JSON object.`;
                         english_translation: {
                             type: Type.STRING,
                             description: "An English translation of the original transcript. If the transcript is already in English, this is the same as the original transcript."
+                        },
+                        slang_detected: {
+                            type: Type.ARRAY,
+                            description: "A list of slang or code words detected, with their meanings. Returns an empty array if none are found.",
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    term: {
+                                        type: Type.STRING,
+                                        description: "The detected slang term or code word."
+                                    },
+                                    meaning: {
+                                        type: Type.STRING,
+                                        description: "The translated meaning or interpretation of the slang."
+                                    }
+                                },
+                                required: ["term", "meaning"]
+                            }
                         }
                     },
                     required: ["threat_rating", "semantic_summary", "english_translation"],

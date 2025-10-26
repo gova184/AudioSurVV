@@ -78,6 +78,19 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onDelete }) => {
                     <p className={`text-sm leading-relaxed ${isAnalyzing ? 'text-gray-400 italic' : 'text-gray-300'}`}>
                         {alert.semanticSummary}
                     </p>
+                    {alert.slangDetected && alert.slangDetected.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-700/50">
+                            <h5 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Slang / Code Words Identified</h5>
+                            <dl className="text-sm">
+                                {alert.slangDetected.map((slang, index) => (
+                                    <div key={index} className="grid grid-cols-3 gap-2 py-1">
+                                        <dt className="col-span-1 font-mono text-indigo-300 bg-gray-900/50 px-2 py-0.5 rounded-md text-center self-center">{slang.term}</dt>
+                                        <dd className="col-span-2 text-gray-300 self-center">{slang.meaning}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+                    )}
                 </div>
                 <div>
                     <h4 className="font-semibold text-gray-300 mb-1">Full Transcript</h4>

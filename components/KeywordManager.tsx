@@ -80,7 +80,7 @@ const KeywordManager: React.FC<KeywordManagerProps> = ({ keywords, onAddKeyword,
     };
 
     return (
-        <div className="bg-gray-800/50 rounded-lg p-6 shadow-lg border border-gray-700">
+        <div>
             <h2 className="text-2xl font-bold text-white mb-4">Keyword Management</h2>
             
             <form onSubmit={handleSubmit} className="space-y-4 mb-6">

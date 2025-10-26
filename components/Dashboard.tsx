@@ -22,9 +22,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     onFilterKeywordChange,
 }) => {
     return (
-        <div className="bg-gray-800/50 rounded-lg p-6 h-full shadow-lg border border-gray-700 flex flex-col">
+        <div className="flex flex-col h-full">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
-                <h2 className="text-2xl font-bold text-white">Real-Time Alerts</h2>
+                <h2 className="text-2xl font-bold text-white">Threat Log</h2>
             </div>
             
             <ThreatChart alerts={alerts} />

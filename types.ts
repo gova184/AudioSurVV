@@ -18,6 +18,11 @@ export interface Keyword {
   samples: AudioSample[];
 }
 
+export interface Slang {
+    term: string;
+    meaning: string;
+}
+
 export interface Alert {
   id: string;
   timestamp: string;
@@ -28,6 +33,7 @@ export interface Alert {
   audioSrc?: string;
   analysisState?: 'preliminary' | 'complete';
   englishTranslation?: string;
+  slangDetected?: Slang[];
 }
 
 // Response from the fast, initial scan
@@ -42,6 +48,7 @@ export interface DeepAnalysisResponse {
     threat_rating: ThreatRating;
     semantic_summary: string;
     english_translation: string;
+    slang_detected?: Slang[];
 }
 
 export interface GeminiAnalysisResponse {
